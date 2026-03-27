@@ -1,0 +1,77 @@
+@font-face {
+    font-family : 'Outfit' ;
+    src : url('./assets/fonts/Outfit/Outfit-VariableFont_wght.ttf') ;
+}
+
+
+:root {
+    /* dark theme */
+    --color-charcoal-black : #121212 ; /* Primary Background */
+    --color-slate-grey : #2C2C2C ; /* Secondary Background */
+    --color-light-grey : #E0E0E0 ; /* Primary Text */
+    --color-medium-grey : #B0B0B0 ; /* Secondary Text */
+    --color-dark-grey : #444444 ; /* Borders/Dividers */
+    --color-soft-grey : #888888 ; /* Accent */
+
+    /* muted pastels */
+    --color-slate-grey : #2C2C2C ; /* Background */
+    --color-light-grey : #E4E4E4 ; /* Primary Text */
+    --color-light-cyan : #A8DADC ; /* Secondary Text */
+    --color-soft-pink : #FFC1CC ; /* Borders/Dividers */
+    --color-lavender : #B39CD0 ; /* Accent */
+}
+
+html {
+    height : 100% ;
+}
+
+body {
+    width : 100% ;
+    height : 100% ;
+
+    cursor : default ;
+
+    font-family : 'Outfit', sans-serif ;
+    font-optical-sizing : auto ;
+    color : var(--font-color) ;
+}
+
+body[data-color-theme="light"] {
+    --background-color-primary : #E4E4E4 ;
+    --background-color-secondary : #c6c6c6 ;
+    --border-color : #515151 ;
+
+    --font-color : #515151 ;
+}
+body[data-color-theme="dark"] {
+    --background-color-primary : var(--color-charcoal-black) ;
+    --background-color-secondary : var(--color-slate-grey) ;
+    --border-color : var(--color-dark-grey) ;
+    --accent-color : var(--color-soft-grey) ;
+
+    --font-color : var(--color-light-grey) ;
+}
+
+:is(
+    button,
+    [type="button"],
+    [type="submit"]
+):not(:disabled) {
+    cursor : pointer ;
+}
+
+button,
+input {
+    color : inherit ;
+}
+
+
+@keyframes expand {
+    0% {
+        width : 0% ;
+    }
+
+    100% {
+        width : 100% ;
+    }
+}
