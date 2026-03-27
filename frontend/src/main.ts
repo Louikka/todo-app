@@ -41,11 +41,7 @@ document.querySelector<HTMLInputElement>('.header .input > .input-submit > input
     if (_text.length === 0) return;
 
     let _id = 0;
-
-    while (DB_data.some((o) => o.id === _id))
-    {
-        _id++;
-    }
+    while (DB_data.some((o) => o.id === _id)) _id++;
 
 
     /* Assembly entry object. */
@@ -54,8 +50,6 @@ document.querySelector<HTMLInputElement>('.header .input > .input-submit > input
         id : _id,
         text : _text,
     };
-
-    console.log(`Entry object assembled : `, d);
 
     DBSetEntry(d.id, d.text).catch((err) =>
     {
