@@ -4,3 +4,4 @@ frontend/dist
 /build/darwin
 /build/windows
 *.ini
+*.code-workspace
