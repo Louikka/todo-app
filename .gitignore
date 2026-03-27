@@ -6,3 +6,4 @@ frontend/dist
 *.ini
 *.code-workspace
 /frontend/wailsjs
+data.db
