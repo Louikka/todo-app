@@ -5,3 +5,4 @@ frontend/dist
 /build/windows
 *.ini
 *.code-workspace
+/frontend/wailsjs
