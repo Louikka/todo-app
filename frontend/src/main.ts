@@ -3,32 +3,21 @@ import { main } from '../wailsjs/go/models';
 
 
 // initial data retrievement
-
-const DB_data = await DBGetEntries().catch((err) =>
+_DBGetEntries().then((data) =>
 {
-    console.error(err);
-    return [] as main.ToDoEntry[];
+    for (let i = 0; i < data.length; i++)
+    {
+        setTimeout(() =>
+        {
+            createToDoEntryElement(data[i]);
+        }, 25 * i);
+    }
 });
 
-for (let i = 0; i < DB_data.length; i++)
+
+const headerInputEventHandler = async () =>
 {
-    setTimeout(() =>
-    {
-        createToDoEntryElement(DB_data[i]);
-    }, 25 * i);
-}
-
-
-document.querySelector<HTMLInputElement>('.header .input > .input-submit > input')!
-    .addEventListener('click', async (ev) =>
-{
-    ev.preventDefault();
-
-    const DB_data = await DBGetEntries().catch((err) =>
-    {
-        console.error(err);
-        return [] as main.ToDoEntry[];
-    });
+    const DB_data = await _DBGetEntries();
 
 
     /* Retrieve data. */
@@ -51,17 +40,69 @@ document.querySelector<HTMLInputElement>('.header .input > .input-submit > input
         text : _text,
     };
 
-    DBSetEntry(d.id, d.text).catch((err) =>
-    {
-        console.error(err);
-    });
-
+    _DBSetEntry(d.id, d.text);
     createToDoEntryElement(d);
+};
+
+document.querySelector<HTMLInputElement>('.header .input > .input-field > input')!
+    .addEventListener('keydown', (ev) =>
+{
+    if (ev.key === 'Enter')
+    {
+        headerInputEventHandler();
+    }
 });
+document.querySelector<HTMLInputElement>('.header .input > .input-submit > input')!
+    .addEventListener('click', headerInputEventHandler)
+;
 
 
 
 /* Helpers *******************************************************************/
+
+/**
+ * Wrapper over `DBGetEntries()` function with error handling.
+ * The Promise will never reject.
+ */
+async function _DBGetEntries(): Promise<main.ToDoEntry[]>
+{
+    let d: main.ToDoEntry[] = [];
+
+    try
+    {
+        d = await DBGetEntries();
+    }
+    catch (err)
+    {
+        console.log(err);
+    }
+
+    return d;
+}
+/** Wrapper over `DBSetEntry()` function with error handling. */
+function _DBSetEntry(id: number, text: string)
+{
+    try
+    {
+        DBSetEntry(id, text);
+    }
+    catch (err)
+    {
+        console.log(err);
+    }
+}
+/** Wrapper over `DBDeleteEntry()` function with error handling. */
+function _DBDeleteEntry(id: number)
+{
+    try
+    {
+        DBDeleteEntry(id);
+    }
+    catch (err)
+    {
+        console.log(err);
+    }
+}
 
 function createToDoEntryElement(data: main.ToDoEntry)
 {
@@ -74,11 +115,7 @@ function createToDoEntryElement(data: main.ToDoEntry)
 
     e.querySelector('.buttons > button.delete')!.addEventListener('click', () =>
     {
-        DBDeleteEntry(data.id).catch((err) =>
-        {
-            console.error(err);
-        });
-
+        _DBDeleteEntry(data.id);
         deleteToDoEntryElement(data.id);
     });
 

@@ -15,6 +15,17 @@
     <link rel="stylesheet" href="./src/style.scss" />
 
     <script type="module" src="./src/main.ts" defer></script>
+
+    <script>
+        function _submitHeaderInput(ev)
+        {
+            if (ev instanceof KeyboardEvent && ev.key === 'Enter')
+            {
+                ev.preventDefault();
+                ev.currentTarget.dispatchEvent(new CustomEvent('headerinputsubmit'));
+            }
+        }
+    </script>
 </head>
 
 

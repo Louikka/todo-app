@@ -82,6 +82,8 @@ body {
 }
 
 .todo-entry {
+    overflow-x : hidden ;
+
     padding : .5rem 1rem ;
 
     display : flex ;
