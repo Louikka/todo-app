@@ -1,5 +1,126 @@
+import { scan, startWith, Subject } from 'rxjs';
 import { DBDeleteEntry, DBGetEntries, DBSetEntry } from '../wailsjs/go/main/App';
 import { main } from '../wailsjs/go/models';
+
+
+/* Initialization ************************************************************/
+
+interface _SubjectAction {
+    type: 'INIT' | 'ADD' | 'DELETE';
+    entry: main.ToDoEntry | null;
+}
+
+const ToDoEntriesSubject$ = new Subject<_SubjectAction>();
+
+const ToDoEntries$ = ToDoEntriesSubject$.pipe(
+    startWith<_SubjectAction>({ type : 'INIT', entry : null, }),
+    scan<_SubjectAction, main.ToDoEntry[], main.ToDoEntry[]>((entries, action) =>
+    {
+        if (action.entry === null) return entries;
+
+        switch (action.type)
+        {
+            case 'ADD':
+            {
+                return [ ...entries, action.entry, ];
+            }
+            case 'DELETE':
+            {
+                return entries.filter((o) =>
+                {
+                    if (action.entry !== null)
+                    {
+                        return o.id !== action.entry.id;
+                    }
+
+                    return false;
+                });
+            }
+
+            default:
+            {
+                return entries;
+            }
+        }
+    }, []),
+);
+
+/** Sends `ADD` action to {@link ToDoEntriesSubject$} Subject. */
+const AddNewEntry$ = (data: main.ToDoEntry) =>
+{
+    ToDoEntriesSubject$.next({
+        type : 'ADD',
+        entry : data,
+    });
+};
+const AddNewEntry = (data: main.ToDoEntry) =>
+{
+    _DBSetEntry(data.id, data.text);
+    AddNewEntry$(data);
+};
+
+/** Sends `DELETE` action to {@link ToDoEntriesSubject$} Subject. */
+const DeleteEntry$ = (id: number) =>
+{
+    ToDoEntriesSubject$.next({
+        type : 'DELETE',
+        entry : {
+            id,
+            text : '',
+        },
+    });
+};
+const DeleteEntry = (id: number) =>
+{
+    _DBDeleteEntry(id);
+    DeleteEntry$(id);
+};
+
+
+/* App logic *****************************************************************/
+
+ToDoEntries$.subscribe((v) =>
+{
+    const container = document.querySelector('.main > .todo-entries')!;
+
+    // here stored only IDs that already displayed
+    const _presentEntries: number[] = [];
+    container.querySelectorAll('.todo-entry[data-id]').forEach((e) =>
+    {
+        const id = +(e.getAttribute('data-id') ?? 0);
+
+        if (v.some((o => o.id === id)))
+        {
+            _presentEntries.push(id);
+        }
+    });
+
+    // append new entry elements
+    for (const data of v)
+    {
+        const _i = _presentEntries.indexOf(data.id);
+        if (_i > -1)
+        {
+            _presentEntries.splice(_i, 1);
+            continue;
+        }
+
+        appendToDoEntryElement(data, () =>
+        {
+            DeleteEntry(data.id);
+        });
+    }
+
+    // cleanup deleted entry elements
+    if (_presentEntries.length > 0)
+    {
+        for (const id of _presentEntries)
+        {
+            deleteToDoEntryElement(id);
+        }
+    }
+});
+
 
 
 // initial data retrievement
@@ -9,7 +130,7 @@ _DBGetEntries().then((data) =>
     {
         setTimeout(() =>
         {
-            createToDoEntryElement(data[i]);
+            AddNewEntry$(data[i]);
         }, 25 * i);
     }
 });
@@ -17,11 +138,6 @@ _DBGetEntries().then((data) =>
 
 const headerInputEventHandler = async () =>
 {
-    const DB_data = await _DBGetEntries();
-
-
-    /* Retrieve data. */
-
     const eHeaderInputField = document.querySelector('.header .input > .input-field > input')! as HTMLInputElement;
 
     const _text = eHeaderInputField.value.trim();
@@ -29,19 +145,12 @@ const headerInputEventHandler = async () =>
 
     if (_text.length === 0) return;
 
-    let _id = 0;
-    while (DB_data.some((o) => o.id === _id)) _id++;
-
-
-    /* Assembly entry object. */
-
     const d: main.ToDoEntry = {
-        id : _id,
+        id : Date.now(),
         text : _text,
     };
 
-    _DBSetEntry(d.id, d.text);
-    createToDoEntryElement(d);
+    AddNewEntry(d);
 };
 
 document.querySelector<HTMLInputElement>('.header .input > .input-field > input')!
@@ -104,7 +213,10 @@ function _DBDeleteEntry(id: number)
     }
 }
 
-function createToDoEntryElement(data: main.ToDoEntry)
+/**
+ * @param onDelete function that will run on element deletion, before deleting db entry and element.
+ */
+function appendToDoEntryElement(data: main.ToDoEntry, onDelete?: () => void)
 {
     const t = document.getElementById('todo-entry')! as HTMLTemplateElement;
     const e = t.content.cloneNode(true) as DocumentFragment;
@@ -113,9 +225,9 @@ function createToDoEntryElement(data: main.ToDoEntry)
 
     e.querySelector('.text')!.textContent = data.text;
 
-    e.querySelector('.buttons > button.delete')!.addEventListener('click', () =>
+    e.querySelector('.button.delete > button')!.addEventListener('click', () =>
     {
-        _DBDeleteEntry(data.id);
+        (onDelete ?? (() => {}))();
         deleteToDoEntryElement(data.id);
     });
 

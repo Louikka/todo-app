@@ -41,7 +41,8 @@ func openDB() (*sql.DB, error) {
 }
 
 type ToDoEntry struct {
-	Id   int    `json:"id"`
+	// Doubles as timestamp of the entry creation.
+	Id   int64  `json:"id"`
 	Text string `json:"text"`
 }
 
@@ -78,7 +79,7 @@ func (app *App) DBGetEntries() ([]ToDoEntry, error) {
 	return entries, nil
 }
 
-func (app *App) DBSetEntry(id int, s string) error {
+func (app *App) DBSetEntry(id int64, s string) error {
 	db, err := openDB()
 	if err != nil {
 		fmt.Println("Failed to open a database ( (main.App).DBSetEntry ).", err)
@@ -95,7 +96,7 @@ func (app *App) DBSetEntry(id int, s string) error {
 	return nil
 }
 
-func (app *App) DBDeleteEntry(id int) error {
+func (app *App) DBDeleteEntry(id int64) error {
 	db, err := openDB()
 	if err != nil {
 		fmt.Println("Failed to open a database ( (main.App).DBDeleteEntry ).", err)

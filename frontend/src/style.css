@@ -19,6 +19,10 @@
     --color-light-cyan : #A8DADC ; /* Secondary Text */
     --color-soft-pink : #FFC1CC ; /* Borders/Dividers */
     --color-lavender : #B39CD0 ; /* Accent */
+
+    --radius-sm : .25rem ;
+    --radius-lg : .5rem ;
+    --radius-2xl : 1rem ;
 }
 
 html {
@@ -37,19 +41,18 @@ body {
 }
 
 body[data-color-theme="light"] {
-    --background-color-primary : #E4E4E4 ;
-    --background-color-secondary : #c6c6c6 ;
-    --border-color : #515151 ;
+    --background-color-primary : rgb(248, 248, 248) ;
+    --background-color-secondary : rgb(222, 227, 230) ;
+    --border-color : rgb(186, 186, 186) ;
 
-    --font-color : #515151 ;
+    --button-color : transparent ;
+    --button-color-inverted : rgb(55, 55, 55) ;
+
+    --font-color : rgb(60, 60, 60) ;
+    --font-color-inverted : rgb(228, 228, 228) ;
 }
 body[data-color-theme="dark"] {
-    --background-color-primary : var(--color-charcoal-black) ;
-    --background-color-secondary : var(--color-slate-grey) ;
-    --border-color : var(--color-dark-grey) ;
-    --accent-color : var(--color-soft-grey) ;
-
-    --font-color : var(--color-light-grey) ;
+    /* */
 }
 
 :is(
@@ -63,6 +66,35 @@ body[data-color-theme="dark"] {
 button,
 input {
     color : inherit ;
+}
+
+img, svg {
+    display : block ;
+}
+
+.style-button {
+    background-color : var(--button-color) ;
+    border : 2px solid var(--border-color) ;
+    border-radius : var(--radius-sm) ;
+
+    color : var(--font-color) ;
+}
+.style-button.inverted {
+    background-color : var(--button-color-inverted) ;
+    border : none ;
+
+    color : var(--font-color-inverted) ;
+}
+
+.style-text-input {
+    background-color : var(--button-color) ;
+    border : 2px solid var(--border-color) ;
+    border-radius : var(--radius-sm) ;
+
+    color : var(--font-color) ;
+}
+.style-text-input::placeholder {
+    font-size : .85em ;
 }
 
 
