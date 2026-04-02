@@ -5,16 +5,30 @@ import { main } from '../wailsjs/go/models';
 
 /* Initialization ************************************************************/
 
-interface _SubjectAction {
-    type: 'INIT' | 'ADD' | 'DELETE';
-    entry: main.ToDoEntry | null;
+interface _ActionableToDoEntry extends main.ToDoEntry {
+    /**
+     * Represents the desire of the action to modify DB. Does not guaranteed
+     * to be fulfilled (implementation should be created manually).
+     */
+    _modifyDBRequest: boolean;
 }
+
+type _SubjectActionNullable = {
+    type: 'INIT';
+    entry: null;
+};
+type _SubjectActionNonNullable = {
+    type: 'ADD' | 'DELETE';
+    entry: _ActionableToDoEntry;
+};
+
+type _SubjectAction = _SubjectActionNullable | _SubjectActionNonNullable;
 
 const ToDoEntriesSubject$ = new Subject<_SubjectAction>();
 
 const ToDoEntries$ = ToDoEntriesSubject$.pipe(
     startWith<_SubjectAction>({ type : 'INIT', entry : null, }),
-    scan<_SubjectAction, main.ToDoEntry[], main.ToDoEntry[]>((entries, action) =>
+    scan<_SubjectAction, _ActionableToDoEntry[], _ActionableToDoEntry[]>((entries, action) =>
     {
         if (action.entry === null) return entries;
 
@@ -45,45 +59,45 @@ const ToDoEntries$ = ToDoEntriesSubject$.pipe(
     }, []),
 );
 
-/** Sends `ADD` action to {@link ToDoEntriesSubject$} Subject. */
-const AddNewEntry$ = (data: main.ToDoEntry) =>
+/**
+ * @param req `false` to NOT update DB on action. `true` by default.
+ */
+const AddNewEntry = (data: main.ToDoEntry, req = true) =>
 {
+    if (req) _DBSetEntry(data.id, data.text);
+
     ToDoEntriesSubject$.next({
         type : 'ADD',
-        entry : data,
+        entry : {
+            ...data,
+            _modifyDBRequest : req,
+        },
     });
 };
-const AddNewEntry = (data: main.ToDoEntry) =>
-{
-    _DBSetEntry(data.id, data.text);
-    AddNewEntry$(data);
-};
 
-/** Sends `DELETE` action to {@link ToDoEntriesSubject$} Subject. */
-const DeleteEntry$ = (id: number) =>
+/**
+ * @param req `false` to NOT update DB on action. `true` by default.
+ */
+const DeleteEntry = (id: number, req = true) =>
 {
+    if (req) _DBDeleteEntry(id);
+
     ToDoEntriesSubject$.next({
         type : 'DELETE',
         entry : {
             id,
             text : '',
+            _modifyDBRequest : req,
         },
     });
 };
-const DeleteEntry = (id: number) =>
-{
-    _DBDeleteEntry(id);
-    DeleteEntry$(id);
-};
 
-
-/* App logic *****************************************************************/
 
 ToDoEntries$.subscribe((v) =>
 {
     const container = document.querySelector('.main > .todo-entries')!;
 
-    // here stored only IDs that already displayed
+    // filter IDs that already displayed
     const _presentEntries: number[] = [];
     container.querySelectorAll('.todo-entry[data-id]').forEach((e) =>
     {
@@ -95,7 +109,7 @@ ToDoEntries$.subscribe((v) =>
         }
     });
 
-    // append new entry elements
+    // append new entry elements to the DOM
     for (const data of v)
     {
         const _i = _presentEntries.indexOf(data.id);
@@ -107,11 +121,11 @@ ToDoEntries$.subscribe((v) =>
 
         appendToDoEntryElement(data, () =>
         {
-            DeleteEntry(data.id);
+            DeleteEntry(data.id, data._modifyDBRequest);
         });
     }
 
-    // cleanup deleted entry elements
+    // clean up deleted entry elements
     if (_presentEntries.length > 0)
     {
         for (const id of _presentEntries)
@@ -123,6 +137,20 @@ ToDoEntries$.subscribe((v) =>
 
 
 
+/* App logic *****************************************************************/
+//
+// Functions available :
+//   `AddNewEntry()` - adds new entry.
+//   `DeleteEntry()` - deletes an existing entry.
+//
+//   `_DBGetEntries()` - reads DB.
+//   `_DBSetEntry()` - sets entry in DB.
+//   `_DBDeleteEntry()` - deletes entry from DB.
+//
+//   `appendToDoEntryElement()` - render entry element in the DOM (does NOT trigger `ToDoEntries$`).
+//   `deleteToDoEntryElement()` - deletes entry element from the DOM.
+
+
 // initial data retrievement
 _DBGetEntries().then((data) =>
 {
@@ -130,7 +158,7 @@ _DBGetEntries().then((data) =>
     {
         setTimeout(() =>
         {
-            AddNewEntry$(data[i]);
+            AddNewEntry(data[i], false);
         }, 25 * i);
     }
 });
@@ -214,7 +242,7 @@ function _DBDeleteEntry(id: number)
 }
 
 /**
- * @param onDelete function that will run on element deletion, before deleting db entry and element.
+ * @param onDelete function that will run before element deletion.
  */
 function appendToDoEntryElement(data: main.ToDoEntry, onDelete?: () => void)
 {
